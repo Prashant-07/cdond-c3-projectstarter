@@ -64,7 +64,7 @@
     "uuid": "^3.4.0",
     "winston-loggly-bulk": "^2.0.3",
     "winston-slack-webhook": "^0.1.6",
-    "class-validator": "13.7.0",
+    "class-validator":"*",
     "standard-version": "^7.0.0"
   },
   "devDependencies": {
