@@ -1,14 +1,5 @@
 version : 2.1
 
-# Commands:
-#   build-node-application :
-#     description: generic run commands for node applications.
-#     steps:
-#       - run :
-#             cd frontend
-#             npm install
-#             npm run build
-
 jobs:
   build-frontend:
     docker :
@@ -48,37 +39,40 @@ jobs:
           paths : [backend/node-modules]
           key  : backend_build
 
-
   test-frontend:
     docker :
       - image : circleci/node:13.8.0
-      steps:
-        - checkout
-        - restore_cache :
+    steps:
+      - checkout
+      - restore_cache :
           keys : [frontend_build]
-        - run :
-            name: Testing frontend
-            command : |
-              cd frontend
-              npm install
-              npm run test
+      - run :
+          name: Testing frontend
+          command : |
+            cd frontend
+            npm install
+            npm run test
 
-  test-frontend:
+  test-backend:
     docker :
       - image : circleci/node:13.8.0
-      steps:
-        - checkout
-        - restore_cache :
-          keys : [frontend_build]
-        - run :
-            name: Testing frontend
-            command : |
-              cd frontend
-              npm install
-              npm run test
+    steps:
+      - checkout
+      - restore_cache :
+          keys : [backend_build]
+      - run :
+          name: Testing Backend
+          command : |
+            cd backend
+            npm install
+            npm run test
 
 workflows :
   default:
     jobs:
       - build-frontend
       - build-backend
+      - test-frontend :
+          requires : [build-frontend]
+      - test-backend :
+          requires : [build-backend]
