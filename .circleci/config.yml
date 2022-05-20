@@ -1,5 +1,8 @@
 version : 2.1
 
+orbs:
+  slack: circleci/slack@4.1
+
 jobs:
   build-frontend:
     docker :
@@ -20,6 +23,11 @@ jobs:
           paths : [frontend/node-modules]
           key   : frontend_build
 
+      - slack/notify:
+          event: fail
+          template: basic_fail_1
+
+
   build-backend:
     docker :
       - image : circleci/node:13.8.0
@@ -38,6 +46,10 @@ jobs:
       - save_cache :
           paths : [backend/node-modules]
           key  : backend_build
+
+      - slack/notify:
+          event: fail
+          template: basic_fail_1
 
   test-frontend:
     docker :
@@ -100,13 +112,19 @@ jobs:
 workflows :
   default:
     jobs:
-      - build-frontend
-      - build-backend
+      - build-frontend:
+          context: Access_Token
+      - build-backend:
+          context: Access_Token
       - test-frontend :
           requires : [build-frontend]
+          context: Access_Token
       - test-backend :
           requires : [build-backend]
+          context: Access_Token
       - scan-frontend :
           requires : [build-frontend]
+          context: Access_Token
       - scan-backend :
           requires : [build-backend]
+          context: Access_Token
