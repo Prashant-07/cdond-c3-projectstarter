@@ -9,10 +9,10 @@ version : 2.1
 #             npm install
 #             npm run build
 
-Jobs:
+jobs:
   build-frontend:
     docker :
-      -image : circleci/node:13.8.0
+      - image : circleci/node:13.8.0
     steps:
       - checkout
       - restore_cache :
@@ -26,12 +26,12 @@ Jobs:
             npm run build
 
       - save_cache :
-        path : [frontend/node-modules]
-        key  : [frontend_build]
+          paths : [frontend/node-modules]
+          key   : frontend_build
 
   build-backend:
     docker :
-      -image : circleci/node:13.8.0
+      - image : circleci/node:13.8.0
     steps:
       - checkout
       - restore_cache :
@@ -45,8 +45,8 @@ Jobs:
             npm run build
 
       - save_cache :
-          path : [backend/node-modules]
-          key  : [backend_build]
+          paths : [backend/node-modules]
+          key  : backend_build
 
 workflows :
   default:
