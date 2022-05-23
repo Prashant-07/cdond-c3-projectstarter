@@ -161,6 +161,7 @@ jobs:
           paths:
             - .circleci/ansible/inventory.txt
 
+<<<<<<< HEAD
     destroy-infrastructure:
       description: Destroy back-end and front-end cloudformation stacks given a workflow ID.
 
@@ -176,6 +177,8 @@ jobs:
               --stack-name "udapeople-frontend-${CIRCLE_WORKFLOW_ID:0:7}"
 
 
+=======
+>>>>>>> 156e0fbfdd0bff353b536f23528d70977e167ecd
 workflows :
   default:
     jobs:
@@ -183,6 +186,7 @@ workflows :
           context: Access_Token
       - build-backend:
           context: Access_Token
+<<<<<<< HEAD
       # - test-frontend :
       #     requires : [build-frontend]
       #     context: Access_Token
@@ -198,3 +202,19 @@ workflows :
       - deploy-infrastructure
       - destroy-infrastructure
           # requires: [test-frontend, test-backend, scan-frontend]
+=======
+      - test-frontend :
+          requires : [build-frontend]
+          context: Access_Token
+      - test-backend :
+          requires : [build-backend]
+          context: Access_Token
+      - scan-frontend :
+          requires : [build-frontend]
+          context: Access_Token
+      # - scan-backend :
+      #     requires : [build-backend]
+      #     context: Access_Token
+      - deploy-infrastructure :
+          requires: [test-frontend, test-backend, scan-frontend]
+>>>>>>> 156e0fbfdd0bff353b536f23528d70977e167ecd
