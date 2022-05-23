@@ -155,16 +155,17 @@ jobs:
             --filters "Name=tag:Project,Values=udapeople" \
             --output text >> .circleci/ansible/inventory.txt
 
-      # - destroy-environment
       - persist_to_workspace:
           root: ~/
           paths:
             - .circleci/ansible/inventory.txt
 
-    destroy-infrastructure:
+  destroy-infrastructure:
       description: Destroy back-end and front-end cloudformation stacks given a workflow ID.
-
+      docker :
+        - image: amazon/aws-cli
       steps:
+        - checkout
         - run:
             name: Destroy environments
             # when: on_fail
