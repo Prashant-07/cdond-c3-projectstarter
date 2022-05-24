@@ -12,11 +12,26 @@ commands:
           name: Destroy environments
           when: on_fail
           command: |
-            aws cloudformation delete-stack \
-            --stack-name "udapeople-backend-${CIRCLE_WORKFLOW_ID:0:7}"
+            aws cloudformation delete-stack --stack-name  "udapeople-backend-${CIRCLE_WORKFLOW_ID:0:7}"
 
-            aws cloudformation delete-stack \
-            --stack-name "udapeople-frontend-${CIRCLE_WORKFLOW_ID:0:7}"
+            aws cloudformation delete-stack --stack-name  "udapeople-frontend-${CIRCLE_WORKFLOW_ID:0:7}"
+
+  revert-migrations:
+    description: Revert the last migration if successfully run in the current workflow.
+    # parameters:
+      # Add parameter here
+    steps:
+      - run:
+          name: Revert migrations
+          when: on_fail
+          command: |
+            export SUCCESS = curl https://kvdb.io/VUhs4hWkQ7bYz1EEybeNoi/migration_${CIRCLE_WORKFLOW_ID:0:7}
+            if(( $SUCCESS==1 ));
+            then
+              cd ~/project/backend
+              npm install
+              npm run migrations:revert
+            fi
 
 jobs:
   build-frontend:
@@ -149,7 +164,7 @@ jobs:
           command: |
             aws cloudformation deploy \
             --template-file .circleci/files/frontend.yml \
-            --stack-name "udapeople-backend-${CIRCLE_WORKFLOW_ID:0:7}" \
+            --stack-name "udapeople-frontend-${CIRCLE_WORKFLOW_ID:0:7}" \
             --parameter-overrides ID="${CIRCLE_WORKFLOW_ID:0:7}"  \
             --tags project=udapeople
 
@@ -204,10 +219,128 @@ jobs:
       - run :
           name : Configure server
           command : |
-            cd : ~/project/.circleci/ansible
-            ansible-playbook -i inventory.txt configure-server.yml
+            ansible-playbook -i .circleci/ansible/inventory.txt .circleci/ansible/configure-server.yml
 
       - destroy-environment
+
+  run-migrations:
+    docker:
+      - image : circleci/node:13.8.0
+
+    steps:
+      - checkout
+      - restore_cache :
+          keys : [backend_build]
+
+      - run :
+          name : Running backend migrations
+          command: |
+            cd backend
+            npm install
+            npm run migrations > migrations_dump.txt
+
+      - run :
+          name : Saving Migrations result to remote db service
+          command : |
+            if grep -q "has been executed successfully." ~/project/backend/migrations_dump.txt
+            then
+              curl https://kvdb.io/VUhs4hWkQ7bYz1EEybeNoi/migration_${CIRCLE_WORKFLOW_ID:0:7}  -d '1'
+            fi
+
+      - destroy-environment
+
+  deploy-frontend:
+    docker:
+      - image : circleci/node:13.8.0
+
+    steps:
+      - checkout
+      - run:
+          name: Installing unzip tool
+          command: |
+            yum install -y tar gzip
+            yum install -y unzip
+
+      - run:
+          name: Installing dependencies
+          command: |
+            apt-get update && sudo apt-get install -yy less
+            curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "awscliv2.zip"
+            unzip awscliv2.zip
+            ./aws/install --bin-dir /usr/local/bin --install-dir /usr/local/aws-cli --update
+
+      - run:
+          name : fetch backend details
+          command : |
+            export BACKEND_IP=$(aws ec2 describe-instances \
+                                --query 'Reservations[*].Instances[*].PublicIpAddress' \
+                                --filters "Name=tag:Project,Values=udapeople" \
+                                --output text)
+            export API_URL="http://${BACKEND_IP}:3030"
+            echo "API_URL = ${API_URL}"
+            echo API_URL="http://${BACKEND_IP}:3030" >> frontend/.env
+            cat frontend/.env
+
+      - run:
+          name: Deploying frontend objects
+          command:
+            curl -sL https://rpm.nodesource.com/setup_lts.x | bash -
+            yum -y install nodejs
+            npm install -g npm
+            npm run build
+            tar -czvf artifact-"${CIRCLE_WORKFLOW_ID:0:7}".tar.gz dist
+            aws s3 cp dist s3://udapeople-${CIRCLE_WORKFLOW_ID:0:7} --recursive
+
+      - run:
+          name: Delete s3 bucket
+          when: on_fail
+          command: |
+            aws s3 rm --recursive s3://udapeople-${CIRCLE_WORKFLOW_ID:0:7}
+      - destroy-environment
+      - revert-migrations
+
+  deploy-backend :
+    docker:
+      - image: python:3.7-alpine3.11
+    steps:
+      - checkout
+
+      - add_ssh_keys:
+          fingerprints: ["60:61:db:e9:5c:85:63:45:5f:1e:86:76:a1:ed:81:cf"]
+
+      - attach_workspace:
+          at: ~/
+
+      - run:
+          name: Installing dependencies
+          command: |
+            cd ~/project/.circleci/ansible
+            apk add --update ansible tar gzip nodejs npm rsync openssh curl nodejs
+            pip install awscli
+
+      - run:
+          name: Deploy backend
+          command: |
+              cd backend
+              npm install
+              npm run build
+              echo build successful
+              tar -C backend -czvf artifact.tar.gz .
+              mkdir .circleci/ansible/roles/deploy/files
+              mv artifact.tar.gz .circleci/ansible/roles/deploy/files
+              cd .circleci/ansible
+
+      - run:
+          name: Run Ansible
+          command: |
+            cd .circleci/ansible
+              echo "Contents  of the inventory.txt file is _____________________________________>>"
+              cat inventory.txt
+              export ANSIBLE_HOST_KEY_CHECKING=False
+              ansible-playbook deploy-backend.yml -i inventory.txt
+
+      - destroy-environment
+      - revert-migrations
 
 workflows :
   default:
@@ -232,3 +365,9 @@ workflows :
           requires: [test-frontend, test-backend, scan-frontend]
       - configure-infrastructure :
           requires: [deploy-infrastructure]
+      - run-migrations:
+          requires: [configure-infrastructure]
+      - deploy-frontend:
+          requires: [run-migrations]
+      - deploy-backend:
+          requires: [run-migrations, deploy-frontend]
