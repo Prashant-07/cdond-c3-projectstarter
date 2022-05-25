@@ -1,0 +1,62 @@
+---
+- name: "upgrading packages."
+  become: true
+  apt:
+    upgrade: "yes"
+
+- name: "installing dependencies."
+  become: true
+  apt:
+    name: ["nodejs", "npm"]
+    update_cache: yes
+
+- name: "installing pm2"
+  become: true
+  npm:
+    name: pm2
+    global: yes
+    production: yes
+    state: present
+
+- name: creating backend directory
+  become: yes
+  file:
+    path: /home/ubuntu/backend
+    state: directory
+    mode: 0755
+
+- name: copying files
+  become: yes
+  copy:
+    src: artifact.tar.gz
+    dest: /home/ubuntu/backend/artifact.tar.gz
+
+- name: unpacking files
+  become: yes
+  shell: |
+    cd /home/ubuntu/backend
+    tar -vxf artifact.tar.gz
+    rm -f artifact.tar.gz
+
+- name: starting app
+  become: yes
+  shell: |
+    cd /home/ubuntu/backend
+    npm install
+    npm run start
+    pm2 stop default
+    pm2 start npm -- start
+    cd dist
+    pm2 start main.js --update-env
+
+  environment:
+    ENVIRONMENT: production
+    TYPEORM_CONNECTION: "postgres"
+    TYPEORM_ENTITIES:  "./modules/domain/**/*.entity{.ts,.js}"
+    TYPEORM_HOST:  "udapeople-prod.cdm7ltixpbyn.us-west-2.rds.amazonaws.com"
+    TYPEORM_PORT: "5432"
+    TYPEORM_USERNAME: "postgres"
+    TYPEORM_PASSWORD: "udapeople123"
+    TYPEORM_DATABASE: "postgres"
+    TYPEORM_MIGRATIONS: "./migrations/*.js"
+    TYPEORM_MIGRATIONS_DIR: "./migrations"

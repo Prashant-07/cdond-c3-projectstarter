@@ -344,6 +344,51 @@ jobs:
       - destroy-environment
       - revert-migrations
 
+
+  smoke-test:
+    docker:
+      - image: circleci/node:14.18.1
+    steps:
+      - checkout
+      - run:
+          name: Installing dependencies
+          command: |
+            sudo apt update
+            sudo apt upgrade -y
+            sudo apt install -y curl
+            sudo apt install -y awscli
+            sudo apt install -y nodejs
+      - run:
+          name: backend test.
+          command: |
+            export BACKEND_IP=$(aws ec2 describe-instances \
+              --query 'Reservations[*].Instances[*].PublicIpAddress' \
+              --filters "Name=tag:Name,Values=backend-${CIRCLE_WORKFLOW_ID:0:7}" \
+              --output text)
+            export API_URL="http://${BACKEND_IP}:3030"
+            echo "API_URL = ${API_URL}"
+            if curl "${API_URL}/api/status" | grep "ok"
+            then
+              echo SUCCESS
+              exit 0
+            else
+              echo FAIL
+              exit 1
+            fi
+      - run:
+          name: frontend test.
+          command: |
+            URL="http://udapeople-${CIRCLE_WORKFLOW_ID:0:7}.s3-website.${AWS_DEFAULT_REGION}.amazonaws.com/#/employees"
+              echo ${URL}
+              if curl -s ${URL} | grep "Welcome"
+              then
+                return 1
+              else
+                return 1
+              fi
+      - destroy-environment
+      - revert-migration
+
 workflows :
   default:
     jobs:
