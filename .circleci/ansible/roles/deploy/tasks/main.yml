@@ -50,13 +50,15 @@
     pm2 start main.js --update-env
 
   environment:
-    ENVIRONMENT: production
-    TYPEORM_CONNECTION: "postgres"
-    TYPEORM_ENTITIES:  "./modules/domain/**/*.entity{.ts,.js}"
-    TYPEORM_HOST:  "udapeople-prod.cdm7ltixpbyn.us-west-2.rds.amazonaws.com"
-    TYPEORM_PORT: "5432"
-    TYPEORM_USERNAME: "postgres"
-    TYPEORM_PASSWORD: "udapeople123"
-    TYPEORM_DATABASE: "postgres"
-    TYPEORM_MIGRATIONS: "./migrations/*.js"
-    TYPEORM_MIGRATIONS_DIR: "./migrations"
+    - TYPEORM_CONNECTION: "{{ lookup('env', 'AWS_ACCESS_KEY_ID')}}"
+    - TYPEORM_CONNECTION: "{{ lookup('env', 'AWS_DEFAULT_REGION')}}"
+    - TYPEORM_CONNECTION: "{{ lookup('env', 'AWS_SECRET_ACCESS_KEY')}}"
+    - TYPEORM_CONNECTION: "{{ lookup('env', 'TYPEORM_CONNECTION')}}"
+    - TYPEORM_CONNECTION: "{{ lookup('env', 'TYPEORM_DATABASE')}}"
+    - TYPEORM_CONNECTION: "{{ lookup('env', 'TYPEORM_ENTITIES')}}"
+    - TYPEORM_CONNECTION: "{{ lookup('env', 'TYPEORM_HOST')}}"
+    - TYPEORM_CONNECTION: "{{ lookup('env', 'TYPEORM_MIGRATIONS')}}"
+    - TYPEORM_CONNECTION: "{{ lookup('env', 'TYPEORM_MIGRATIONS_DIR')}}"
+    - TYPEORM_CONNECTION: "{{ lookup('env', 'TYPEORM_PASSWORD')}}"
+    - TYPEORM_CONNECTION: "{{ lookup('env', 'TYPEORM_PORT')}}"
+    - TYPEORM_CONNECTION: "{{ lookup('env', 'TYPEORM_USERNAME')}}"
