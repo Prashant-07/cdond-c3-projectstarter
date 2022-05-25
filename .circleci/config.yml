@@ -296,7 +296,7 @@ jobs:
           command: |
             aws s3 rm --recursive s3://udapeople-${CIRCLE_WORKFLOW_ID:0:7}
       - destroy-environment
-      - revert-migration
+      - revert-migrations
 
   deploy-backend :
     docker:
@@ -324,6 +324,9 @@ jobs:
               npm install
               npm run build
               echo build successful
+      - run:
+          name: Configure Server
+          command: |
               tar -C backend -czvf artifact.tar.gz .
               mkdir .circleci/ansible/roles/deploy/files
               mv artifact.tar.gz .circleci/ansible/roles/deploy/files
@@ -338,21 +341,6 @@ jobs:
               export ANSIBLE_HOST_KEY_CHECKING=False
               ansible-playbook deploy-backend.yml -i inventory.txt
 
-      - run:
-          name: Deploying frontend objects
-          command:
-            curl -sL https://rpm.nodesource.com/setup_lts.x | bash -
-            yum -y install nodejs
-            npm install -g npm
-            npm run build
-            tar -czvf artifact-"${CIRCLE_WORKFLOW_ID:0:7}".tar.gz dist
-            aws s3 cp dist s3://udapeople-${CIRCLE_WORKFLOW_ID:0:7} --recursive
-
-      - run:
-          name: Delete s3 bucket
-          when: on_fail
-          command: |
-            aws s3 rm --recursive s3://udapeople-${CIRCLE_WORKFLOW_ID:0:7}
       - destroy-environment
       - revert-migrations
 
