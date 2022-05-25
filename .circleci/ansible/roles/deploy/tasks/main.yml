@@ -18,47 +18,27 @@
     production: yes
     state: present
 
-- name: creating backend directory
-  become: yes
-  file:
-    path: /home/ubuntu/backend
-    state: directory
-    mode: 0755
-
-- name: copying files
-  become: yes
+- name: "copying backend file"
+  become: true
   copy:
-    src: artifact.tar.gz
-    dest: /home/ubuntu/backend/artifact.tar.gz
+    src: /root/project/backend
+    dest: /root
+    force: no
 
-- name: unpacking files
-  become: yes
-  shell: |
-    cd /home/ubuntu/backend
-    tar -vxf artifact.tar.gz
-    rm -f artifact.tar.gz
+- name: "installing npm packages"
+  become: true
+  command: npm install
+  args:
+    chdir: /root/backend
 
-- name: starting app
-  become: yes
-  shell: |
-    cd /home/ubuntu/backend
-    npm install
-    npm run start
-    pm2 stop default
-    pm2 start npm -- start
-    cd dist
-    pm2 start main.js --update-env
+- name: "compiling npm packages"
+  become: true
+  command: npm run build
+  args:
+    chdir: /root/backend
 
-  environment:
-    - TYPEORM_CONNECTION: "{{ lookup('env', 'AWS_ACCESS_KEY_ID')}}"
-    - TYPEORM_CONNECTION: "{{ lookup('env', 'AWS_DEFAULT_REGION')}}"
-    - TYPEORM_CONNECTION: "{{ lookup('env', 'AWS_SECRET_ACCESS_KEY')}}"
-    - TYPEORM_CONNECTION: "{{ lookup('env', 'TYPEORM_CONNECTION')}}"
-    - TYPEORM_CONNECTION: "{{ lookup('env', 'TYPEORM_DATABASE')}}"
-    - TYPEORM_CONNECTION: "{{ lookup('env', 'TYPEORM_ENTITIES')}}"
-    - TYPEORM_CONNECTION: "{{ lookup('env', 'TYPEORM_HOST')}}"
-    - TYPEORM_CONNECTION: "{{ lookup('env', 'TYPEORM_MIGRATIONS')}}"
-    - TYPEORM_CONNECTION: "{{ lookup('env', 'TYPEORM_MIGRATIONS_DIR')}}"
-    - TYPEORM_CONNECTION: "{{ lookup('env', 'TYPEORM_PASSWORD')}}"
-    - TYPEORM_CONNECTION: "{{ lookup('env', 'TYPEORM_PORT')}}"
-    - TYPEORM_CONNECTION: "{{ lookup('env', 'TYPEORM_USERNAME')}}"
+- name: "starting server"
+  become: true
+  command: pm2 start npm -- run start
+  args:
+    chdir: /root/backend/dist
