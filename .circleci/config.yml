@@ -252,39 +252,35 @@ jobs:
 
   deploy-frontend:
     docker:
-      - image : amazon/aws-cli
-
+      - image: amazon/aws-cli
     steps:
       - checkout
       - run:
-          name: Installing unzip tool
+          name: Install tar/gzip utility
           command: |
             yum install -y tar gzip
             yum install -y unzip
-
       - run:
-          name: Installing dependencies
+          name: Install dependencies
           command: |
             apt-get update && sudo apt-get install -yy less
             curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "awscliv2.zip"
             unzip awscliv2.zip
             ./aws/install --bin-dir /usr/local/bin --install-dir /usr/local/aws-cli --update
-
       - run:
-          name : fetch backend details
-          command : |
-            export BACKEND_IP=$(aws ec2 describe-instances \
-                                --query 'Reservations[*].Instances[*].PublicIpAddress' \
-                                --filters "Name=tag:Project,Values=udapeople" \
-                                --output text)
+          name: Get backend url
+          command: |
+            BACKEND_IP=$(aws ec2 describe-instances \
+            --filters "Name=tag:Name,Values=backend-${CIRCLE_WORKFLOW_ID:0:7}" \
+            --query 'Reservations[0].Instances[0].PublicIpAddress' \
+            --output text)
             export API_URL="http://${BACKEND_IP}:3030"
-            echo "API_URL = ${API_URL}"
+            echo "${API_URL}"
             echo API_URL="http://${BACKEND_IP}:3030" >> frontend/.env
             cat frontend/.env
-
       - run:
-          name: Deploying frontend objects
-          command:
+          name: Deploy frontend objects
+          command: |
             cd frontend
             curl -sL https://rpm.nodesource.com/setup_lts.x | bash -
             yum -y install nodejs
@@ -294,14 +290,13 @@ jobs:
             npm run build
             tar -czvf artifact-"${CIRCLE_WORKFLOW_ID:0:7}".tar.gz dist
             aws s3 cp dist s3://udapeople-${CIRCLE_WORKFLOW_ID:0:7} --recursive
-
       - run:
-          name: Delete s3 bucket
+          name: delete s3 bucket
           when: on_fail
           command: |
             aws s3 rm --recursive s3://udapeople-${CIRCLE_WORKFLOW_ID:0:7}
       - destroy-environment
-      - revert-migrations
+      - revert-migration
 
   deploy-backend :
     docker:
