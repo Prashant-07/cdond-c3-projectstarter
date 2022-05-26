@@ -407,6 +407,8 @@ jobs:
       - run:
           name: Caching old WorkflowID on kvdb for cleanup
           command: |
+            echo $(pwd)
+            echo $(ls .)
             WorkflowID=$(aws cloudformation \
               list-exports --query "Exports[?Name==\`WorkflowID\`].Value" \
               --no-paginate --output text)
