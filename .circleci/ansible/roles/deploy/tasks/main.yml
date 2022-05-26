@@ -2,25 +2,6 @@
   - name: "show remote environment"
     shell: env
 
-  - name: "upgrading packages."
-    become: true
-    apt:
-      upgrade: "yes"
-
-  - name: "installing dependencies."
-    become: true
-    apt:
-      name: ["nodejs", "npm"]
-      update_cache: yes
-
-  - name: "installing pm2"
-    become: true
-    npm:
-      name: pm2
-      global: yes
-      production: yes
-      state: present
-
   - name: "copy backend binaries"
     become: yes
     synchronize:
@@ -42,32 +23,17 @@
 
   - name: "start server"
     become: true
-    command: pm2 start -f ./main.js --update-env
+    command: pm2 start -f ./main.js
     args:
       chdir: /home/ubuntu/uda_app/dist
-
-# - name: "copying backend file"
-#   become: true
-#   copy:
-#     src: /root/project/backend
-#     dest: /root
-#     force: no
-
-# - name: "installing npm packages"
-#   become: true
-#   command: npm install
-#   args:
-#     chdir: /root/backend
-
-# - name: "compiling npm packages"
-#   become: true
-#   command: npm run build
-#   args:
-#     chdir: /root/backend
-
-# - name: "starting server"
-#   become: true
-#   command: pm2 start npm -- run start
-#   args:
-#     chdir: /root/backend/dist
-
+    environment:
+     ENVIRONMENT: production
+     TYPEORM_CONNECTION: "{{ lookup('env', 'TYPEORM_CONNECTION') }}"
+     TYPEORM_MIGRATIONS_DIR: "./migrations"
+     TYPEORM_MIGRATIONS: "./migrations/*.js"
+     TYPEORM_ENTITIES: "./modules/domain/**/*.entity.js"
+     TYPEORM_HOST: "{{ lookup('env', 'TYPEORM_HOST') }}"
+     TYPEORM_PORT: "{{ lookup('env', 'TYPEORM_PORT') }}"
+     TYPEORM_USERNAME: "{{ lookup('env', 'TYPEORM_USERNAME') }}"
+     TYPEORM_PASSWORD: "{{ lookup('env', 'TYPEORM_PASSWORD') }}"
+     TYPEORM_DATABASE: "{{ lookup('env', 'TYPEORM_DATABASE') }}"
