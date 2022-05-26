@@ -343,8 +343,8 @@ jobs:
               export ANSIBLE_HOST_KEY_CHECKING=False
               ansible-playbook deploy-backend.yml -i inventory.txt
 
-      - destroy-environment
-      - revert-migrations
+      # - destroy-environment
+      # - revert-migrations
 
 
   smoke-test:
