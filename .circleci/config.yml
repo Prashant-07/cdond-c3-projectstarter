@@ -207,6 +207,9 @@ jobs:
       - add_ssh_keys :
           fingerprints : ["f9:87:53:db:38:3f:1f:cf:d9:16:09:23:26:7b:88:38"]
 
+      - attach_workspace:
+          at : ~/
+
       - run :
           name: Install Dependencies
           command : |
@@ -216,10 +219,9 @@ jobs:
       - run :
           name : Configure server
           command : |
-            cd .circleci/ansible
-            ansible-playbook -i inventory.txt configure-server.yml
+            ansible-playbook -i ~/project/.circleci/ansible/inventory.txt ~/project/.circleci/ansible/configure-server.yml
             echo "Contents  of the inventory.txt file is _____________________________________>>"
-            cat inventory.txt
+            cat ~/project/.circleci/ansible/inventory.txt
 
       - destroy-environment
 
