@@ -219,7 +219,9 @@ jobs:
       - run :
           name : Configure server
           command : |
-            ansible-playbook -i .circleci/ansible/inventory.txt .circleci/ansible/configure-server.yml
+            ansible-playbook -i ~/project/.circleci/ansible/inventory.txt ~/project/.circleci/ansible/configure-server.yml
+            echo "Contents  of the inventory.txt file is _____________________________________>>"
+            cat ~/project/.circleci/ansible/inventory.txt
 
       - destroy-environment
 
@@ -335,7 +337,7 @@ jobs:
       - run:
           name: Run Ansible
           command: |
-            cd .circleci/ansible
+            cd ~/project/.circleci/ansible
               echo "Contents  of the inventory.txt file is _____________________________________>>"
               cat inventory.txt
               export ANSIBLE_HOST_KEY_CHECKING=False
