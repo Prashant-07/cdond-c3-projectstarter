@@ -406,7 +406,6 @@ jobs:
 
       - run:
           name: Caching old WorkflowID on kvdb for cleanup
-          working_directory: ./.circleci/files
           command: |
             WorkflowID=$(aws cloudformation \
               list-exports --query "Exports[?Name==\`WorkflowID\`].Value" \
