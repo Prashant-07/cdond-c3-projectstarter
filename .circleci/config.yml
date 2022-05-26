@@ -408,7 +408,7 @@ jobs:
           name: Caching old WorkflowID on kvdb for cleanup
           command: |
             echo $(pwd)
-            echo $(ls .)
+            echo $(ls . -a)
             WorkflowID=$(aws cloudformation \
               list-exports --query "Exports[?Name==\`WorkflowID\`].Value" \
               --no-paginate --output text)
@@ -418,7 +418,7 @@ jobs:
           name: Update cloudfront distribution
           command: |
             aws cloudformation deploy \
-              --template-file .circleci/files/cloudfront.yaml \
+              --template-file ./.circleci/files/cloudfront.yaml \
               --stack-name udapeople-cloudfront-production \
               --parameter-overrides WorkflowID="${CIRCLE_WORKFLOW_ID:0:7}" \
               --tags project=udapeople
