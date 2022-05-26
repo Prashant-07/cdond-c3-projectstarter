@@ -2,6 +2,20 @@
   - name: "show remote environment"
     shell: env
 
+  - name: "installing dependencies."
+    become: true
+    apt:
+      name: ["nodejs", "npm"]
+      update_cache: yes
+
+  - name: "installing pm2"
+    become: true
+    npm:
+      name: pm2
+      global: yes
+      production: yes
+      state: present
+
   - name: "copy backend binaries"
     become: yes
     synchronize:
